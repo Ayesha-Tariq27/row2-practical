@@ -1,0 +1,21 @@
+---
+- name: Configure application environment
+  hosts: local
+  become: false
+
+  tasks:
+    - name: Check Git installation
+      command: git --version
+      register: git_version
+      changed_when: false
+
+    - name: Check kubectl installation
+      command: kubectl version --client
+      register: kubectl_version
+      changed_when: false
+
+    - name: Display tool versions
+      debug:
+        msg:
+          - "{{ git_version.stdout }}"
+          - "{{ kubectl_version.stdout }}"
