@@ -1,6 +1,8 @@
+
 ---
-- name: Configure application environment
+- name: Automate Laravel Kubernetes deployment
   hosts: local
+  connection: local
   become: false
 
   tasks:
@@ -14,8 +16,30 @@
       register: kubectl_version
       changed_when: false
 
-    - name: Display tool versions
+    - name: Apply Laravel Kubernetes configuration
+      command:
+        argv:
+          - kubectl
+          - apply
+          - -f
+          - "{{ playbook_dir }}/../laravel-app/k8s/laravel.yaml"
+      register: deployment_result
+      changed_when: "'created' in deployment_result.stdout or 'configured' in deployment_result.stdout"
+
+    - name: Wait for Laravel deployment
+      command: kubectl rollout status deployment/laravel-deployment
+      changed_when: false
+
+    - name: Verify database connectivity
+      command: kubectl exec deployment/laravel-deployment -- php artisan migrate:status
+      register: database_status
+      changed_when: false
+
+    - name: Display results
       debug:
         msg:
           - "{{ git_version.stdout }}"
           - "{{ kubectl_version.stdout }}"
+          - "{{ deployment_result.stdout }}"
+          - "{{ database_status.stdout }}"
+
